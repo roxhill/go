@@ -41,6 +41,32 @@ const (
 	SecondFactorTotp       = "totp"
 )
 
+type GetUserRequest struct {
+	Id string `json:"userId"`
+}
+
+func (c *Client) GetUser(request *GetUserRequest) (*User, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal user: %v", err)
+	}
+
+	responseBody, err := c.request(getUserAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch the user: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &User{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
 type ListUsersRequest struct {
 	Cursor string `json:"cursor"`
 	Limit  int    `json:"limit"`
@@ -88,16 +114,24 @@ type User struct {
 }
 
 type Client struct {
-	baseUrl string
-	client  *http.Client
-	apiKey  string
+	baseUrl      string
+	client       *http.Client
+	apiKey       string
+	preSharedKey string
 }
 
-func NewClient(baseUrl string, apiKey string, preSharedKey string) *Client {
+type ClientConfig struct {
+	baseUrl      string
+	apiKey       string
+	preSharedKey string
+}
+
+func NewClient(config *ClientConfig) *Client {
 	return &Client{
-		baseUrl: baseUrl,
-		client:  &http.Client{},
-		apiKey:  apiKey,
+		baseUrl:      config.baseUrl,
+		client:       &http.Client{},
+		apiKey:       config.apiKey,
+		preSharedKey: config.preSharedKey,
 	}
 }
 
