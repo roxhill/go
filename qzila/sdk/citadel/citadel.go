@@ -41,11 +41,60 @@ const (
 	SecondFactorTotp       = "totp"
 )
 
-type GetUserRequest struct {
-	Id string `json:"userId"`
+type InviteUserRequest struct {
+	Username            string   `json:"username"`
+	EmailAddress        string   `json:"emailAddress"`
+	AllowedAuthFlows    []string `json:"allowedAuthFlows"`
+	RedirectUri         string   `json:"redirectUri"`
+	ExpirationInSeconds int      `json:"expirationInSeconds"`
+	Language            string   `json:"language"`
 }
 
-func (c *Client) GetUser(request *GetUserRequest) (*User, error) {
+type InviteUserResponse struct {
+	UserId string `json:"userId"`
+}
+
+func (c *Client) InviteUser(request *InviteUserRequest) (*InviteUserResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(inviteUserAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &InviteUserResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type GetUserRequest struct {
+	UserId string `json:"userId"`
+}
+
+type GetUserResponse struct {
+	UserId                 string   `json:"id"`
+	AllowedAuthFlows       []string `json:"allowedAuthFlows"`
+	RequiresPasswordChange bool     `json:"requiresPasswordChange"`
+	Status                 string   `json:"status"`
+	Username               string   `json:"username"`
+	FailedPasswordAttempts int      `json:"failedPasswordAttempts"`
+	Mfa                    bool     `json:"mfa"`
+	EmailAddress           string   `json:"emailAddress"`
+	EnabledMfaMethods      []string `json:"enabledMfaMethods"`
+	Language               string   `json:"language"`
+	PhoneNumber            string   `json:"phoneNumber"`
+}
+
+func (c *Client) GetUser(request *GetUserRequest) (*GetUserResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal user: %v", err)
@@ -58,7 +107,37 @@ func (c *Client) GetUser(request *GetUserRequest) (*User, error) {
 
 	defer responseBody.Close()
 
-	response := &User{}
+	response := &GetUserResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type DeleteUserRequest struct {
+	UserId string `json:"userId"`
+}
+
+type DeleteUserResponse struct {
+	Status string `json:"status"`
+}
+
+func (c *Client) DeleteUser(request *DeleteUserRequest) (*DeleteUserResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(deleteUserAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &DeleteUserResponse{}
 	err = json.NewDecoder(responseBody).Decode(response)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
@@ -68,24 +147,24 @@ func (c *Client) GetUser(request *GetUserRequest) (*User, error) {
 }
 
 type ListUsersRequest struct {
-	Cursor string `json:"cursor"`
+	Cursor string `json:"cursor,omitempty"`
 	Limit  int    `json:"limit"`
 }
 
 type ListUsersResponse struct {
-	Users  []User `json:"items"`
-	Cursor string `json:"cursor"`
+	Users  []GetUserResponse `json:"items"`
+	Cursor string            `json:"cursor,omitempty"`
 }
 
 func (c *Client) ListUsers(request *ListUsersRequest) (*ListUsersResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal user: %v", err)
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
 	}
 
 	responseBody, err := c.request(listUsersAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch the list of the users: %v", err)
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
 	}
 
 	defer responseBody.Close()
@@ -99,18 +178,203 @@ func (c *Client) ListUsers(request *ListUsersRequest) (*ListUsersResponse, error
 	return response, nil
 }
 
-type User struct {
-	Id                     string   `json:"id"`
-	AllowedAuthFlows       []string `json:"allowedAuthFlows"`
-	RequiresPasswordChange bool     `json:"requiresPasswordChange"`
-	Status                 string   `json:"status"`
-	Username               string   `json:"username"`
-	FailedPasswordAttempts int      `json:"failedPasswordAttempts"`
-	Mfa                    bool     `json:"mfa"`
-	EmailAddress           string   `json:"emailAddress"`
-	EnabledMfaMethods      []string `json:"enabledMfaMethods"`
-	Language               string   `json:"language"`
-	PhoneNumber            string   `json:"phoneNumber"`
+type UpdateUserRequest struct {
+	UserId       string `json:"userId"`
+	Username     string `json:"username,omitempty"`
+	EmailAddress string `json:"emailAddress,omitempty"`
+	PhoneNumber  string `json:"phoneNumber,omitempty"`
+	Status       string `json:"status,omitempty"`
+}
+
+func (c *Client) UpdateUser(request *UpdateUserRequest) (*GetUserResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(updateUserAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &GetUserResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type GetAllUserMetadataRequest struct {
+	UserId string `json:"userId"`
+}
+
+type GetAllUserMetadataResponse struct {
+	Items []MetadataItem `json:"items"`
+}
+
+type MetadataItem struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+func (c *Client) GetAllUserMetadata(request *GetAllUserMetadataRequest) (*GetAllUserMetadataResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(getUserMetadataAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &GetAllUserMetadataResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type SetUserMetadataRequest struct {
+	UserId   string         `json:"userId"`
+	Metadata []MetadataItem `json:"metadata"`
+}
+
+type SetUserMetadataResponse struct {
+	Status string `json:"status"`
+}
+
+func (c *Client) SetUserMetadata(request *SetUserMetadataRequest) (*SetUserMetadataResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(setUserMetadataAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &SetUserMetadataResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type DeleteUserMetadataRequest struct {
+	UserId   string   `json:"userId"`
+	Metadata []string `json:"metadata"`
+}
+
+type DeleteUserMetadataResponse struct {
+	Status string `json:"status"`
+}
+
+func (c *Client) DeleteUserMetadata(request *DeleteUserMetadataRequest) (*DeleteUserMetadataResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(deleteUserMetadataAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &DeleteUserMetadataResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type AdminResetPasswordRequest struct {
+	UserId              string `json:"userId"`
+	RedirectUri         string `json:"redirectUri"`
+	ExpirationInSeconds int    `json:"expirationInSeconds"`
+}
+
+type AdminResetPasswordResponse struct {
+	Status string `json:"status"`
+}
+
+func (c *Client) AdminResetPassword(request *AdminResetPasswordRequest) (*AdminResetPasswordResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(adminResetPasswordAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &AdminResetPasswordResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type VerifyJwtRequest struct {
+	Jwt                 string          `json:"jwt"`
+	Expectations        JwtExpectations `json:"expectations"`
+	ExpirationInSeconds int             `json:"expirationInSeconds"`
+}
+
+type VerifyJwtResponse struct {
+	IsValid bool   `json:"isValid"`
+	Reason  string `json:"reason,omitempty"`
+}
+
+type JwtExpectations struct {
+	Kind     string `json:"kind"`
+	Issuer   string `json:"issuer"`
+	Audience string `json:"audience"`
+	MaxAge   int    `json:"maxAge"`
+}
+
+func (c *Client) VerifyJwt(request *VerifyJwtRequest) (*VerifyJwtResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(verifyJwtAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &VerifyJwtResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
 }
 
 type Client struct {
