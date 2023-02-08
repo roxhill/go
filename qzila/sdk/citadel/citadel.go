@@ -121,17 +121,17 @@ type Client struct {
 }
 
 type ClientConfig struct {
-	baseUrl      string
-	apiKey       string
-	preSharedKey string
+	BaseUrl      string
+	ApiKey       string
+	PreSharedKey string
 }
 
 func NewClient(config *ClientConfig) *Client {
 	return &Client{
-		baseUrl:      config.baseUrl,
+		baseUrl:      config.BaseUrl,
 		client:       &http.Client{},
-		apiKey:       config.apiKey,
-		preSharedKey: config.preSharedKey,
+		apiKey:       config.ApiKey,
+		preSharedKey: config.PreSharedKey,
 	}
 }
 
