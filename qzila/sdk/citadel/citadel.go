@@ -54,7 +54,7 @@ type InviteUserResponse struct {
 	UserId string `json:"userId"`
 }
 
-func (c *Client) InviteUser(request *InviteUserRequest) (*InviteUserResponse, error) {
+func (c *client) InviteUser(request *InviteUserRequest) (*InviteUserResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -94,7 +94,7 @@ type GetUserResponse struct {
 	PhoneNumber            string   `json:"phoneNumber"`
 }
 
-func (c *Client) GetUser(request *GetUserRequest) (*GetUserResponse, error) {
+func (c *client) GetUser(request *GetUserRequest) (*GetUserResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal user: %v", err)
@@ -124,7 +124,7 @@ type DeleteUserResponse struct {
 	Status string `json:"status"`
 }
 
-func (c *Client) DeleteUser(request *DeleteUserRequest) (*DeleteUserResponse, error) {
+func (c *client) DeleteUser(request *DeleteUserRequest) (*DeleteUserResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -156,7 +156,7 @@ type ListUsersResponse struct {
 	Cursor string            `json:"cursor,omitempty"`
 }
 
-func (c *Client) ListUsers(request *ListUsersRequest) (*ListUsersResponse, error) {
+func (c *client) ListUsers(request *ListUsersRequest) (*ListUsersResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -186,7 +186,7 @@ type UpdateUserRequest struct {
 	Status       string `json:"status,omitempty"`
 }
 
-func (c *Client) UpdateUser(request *UpdateUserRequest) (*GetUserResponse, error) {
+func (c *client) UpdateUser(request *UpdateUserRequest) (*GetUserResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -221,7 +221,7 @@ type MetadataItem struct {
 	Value string `json:"value"`
 }
 
-func (c *Client) GetAllUserMetadata(request *GetAllUserMetadataRequest) (*GetAllUserMetadataResponse, error) {
+func (c *client) GetAllUserMetadata(request *GetAllUserMetadataRequest) (*GetAllUserMetadataResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -252,7 +252,7 @@ type SetUserMetadataResponse struct {
 	Status string `json:"status"`
 }
 
-func (c *Client) SetUserMetadata(request *SetUserMetadataRequest) (*SetUserMetadataResponse, error) {
+func (c *client) SetUserMetadata(request *SetUserMetadataRequest) (*SetUserMetadataResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -283,7 +283,7 @@ type DeleteUserMetadataResponse struct {
 	Status string `json:"status"`
 }
 
-func (c *Client) DeleteUserMetadata(request *DeleteUserMetadataRequest) (*DeleteUserMetadataResponse, error) {
+func (c *client) DeleteUserMetadata(request *DeleteUserMetadataRequest) (*DeleteUserMetadataResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -315,7 +315,7 @@ type AdminResetPasswordResponse struct {
 	Status string `json:"status"`
 }
 
-func (c *Client) AdminResetPassword(request *AdminResetPasswordRequest) (*AdminResetPasswordResponse, error) {
+func (c *client) AdminResetPassword(request *AdminResetPasswordRequest) (*AdminResetPasswordResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -355,7 +355,7 @@ type JwtExpectations struct {
 	MaxAge   int    `json:"maxAge"`
 }
 
-func (c *Client) VerifyJwt(request *VerifyJwtRequest) (*VerifyJwtResponse, error) {
+func (c *client) VerifyJwt(request *VerifyJwtRequest) (*VerifyJwtResponse, error) {
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -377,7 +377,20 @@ func (c *Client) VerifyJwt(request *VerifyJwtRequest) (*VerifyJwtResponse, error
 	return response, nil
 }
 
-type Client struct {
+type Client interface {
+	InviteUser(request *InviteUserRequest) (*InviteUserResponse, error)
+	GetUser(request *GetUserRequest) (*GetUserResponse, error)
+	DeleteUser(request *DeleteUserRequest) (*DeleteUserResponse, error)
+	ListUsers(request *ListUsersRequest) (*ListUsersResponse, error)
+	UpdateUser(request *UpdateUserRequest) (*GetUserResponse, error)
+	GetAllUserMetadata(request *GetAllUserMetadataRequest) (*GetAllUserMetadataResponse, error)
+	SetUserMetadata(request *SetUserMetadataRequest) (*SetUserMetadataResponse, error)
+	DeleteUserMetadata(request *DeleteUserMetadataRequest) (*DeleteUserMetadataResponse, error)
+	AdminResetPassword(request *AdminResetPasswordRequest) (*AdminResetPasswordResponse, error)
+	VerifyJwt(request *VerifyJwtRequest) (*VerifyJwtResponse, error)
+}
+
+type client struct {
 	baseUrl      string
 	client       *http.Client
 	apiKey       string
@@ -390,8 +403,8 @@ type ClientConfig struct {
 	PreSharedKey string
 }
 
-func NewClient(config *ClientConfig) *Client {
-	return &Client{
+func NewClient(config *ClientConfig) Client {
+	return &client{
 		baseUrl:      config.BaseUrl,
 		client:       &http.Client{},
 		apiKey:       config.ApiKey,
@@ -399,15 +412,15 @@ func NewClient(config *ClientConfig) *Client {
 	}
 }
 
-func (client *Client) request(action string, body io.Reader) (io.ReadCloser, error) {
-	req, err := http.NewRequest("POST", client.baseUrl+action, body)
+func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
+	req, err := http.NewRequest("POST", c.baseUrl+action, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create POST request: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", client.apiKey)
+	req.Header.Set("Authorization", c.apiKey)
 
-	resp, err := client.client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send POST request: %v", err)
 	}
