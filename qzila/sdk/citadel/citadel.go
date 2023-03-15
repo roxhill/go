@@ -18,6 +18,7 @@ const (
 	setUserMetadataAction    = "/users.metadata.set"
 	deleteUserMetadataAction = "/users.metadata.delete"
 	adminResetPasswordAction = "/users.adminResetPassword"
+	adminMigrateUsersAction  = "/users.adminMigrateUsers"
 	verifyJwtAction          = "/users.verifyJwt"
 )
 
@@ -27,6 +28,7 @@ const (
 	UserLocked              = "locked"
 	UserInvited             = "invited"
 	UserInvitationConfirmed = "invitationConfirmed"
+	UserMigrated            = "migrated"
 )
 
 const (
@@ -337,6 +339,98 @@ func (c *client) AdminResetPassword(request *AdminResetPasswordRequest) (*AdminR
 	return response, nil
 }
 
+type AdminMigrateBcryptUsersRequest struct {
+	Items []BcryptUserMigrationRequest `json:"items"`
+}
+
+type BcryptUserMigrationRequest struct {
+	Username               string         `json:"username"`
+	EmailAddress           string         `json:"emailAddress"`
+	PhoneNumber            string         `json:"phoneNumber,omitempty"`
+	Password               BcryptPassword `json:"password"`
+	RequiresPasswordChange bool           `json:"requiresPasswordChange"`
+	AllowedAuthFlows       []string       `json:"allowedAuthFlows"`
+	Language               string         `json:"language"`
+}
+
+type BcryptPassword struct {
+	Algorithm string `json:"algorithm"`
+	Hash      string `json:"hash"`
+}
+
+type AdminMigrateUsersResponse struct {
+	Items []UserId `json:"items"`
+}
+
+type UserId struct {
+	UserId string `json:"userId"`
+}
+
+func (c *client) AdminMigrateBcryptUsers(request *AdminMigrateBcryptUsersRequest) (*AdminMigrateUsersResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(adminMigrateUsersAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &AdminMigrateUsersResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type AdminMigrateSha512UsersRequest struct {
+	Items []Sha512UserMigrationRequest `json:"items"`
+}
+
+type Sha512UserMigrationRequest struct {
+	Username               string         `json:"username"`
+	EmailAddress           string         `json:"emailAddress"`
+	PhoneNumber            string         `json:"phoneNumber,omitempty"`
+	Password               Sha512Password `json:"password"`
+	RequiresPasswordChange bool           `json:"requiresPasswordChange"`
+	AllowedAuthFlows       []string       `json:"allowedAuthFlows"`
+	Language               string         `json:"language"`
+}
+
+type Sha512Password struct {
+	Algorithm  string `json:"algorithm"`
+	Hash       string `json:"hash"`
+	Salt       string `json:"salt"`
+	Iterations int    `json:"iterations"`
+}
+
+func (c *client) AdminMigrateSha512Users(request *AdminMigrateSha512UsersRequest) (*AdminMigrateUsersResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(adminMigrateUsersAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &AdminMigrateUsersResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
 type VerifyJwtRequest struct {
 	Jwt                 string          `json:"jwt"`
 	Expectations        JwtExpectations `json:"expectations"`
@@ -387,6 +481,8 @@ type Client interface {
 	SetUserMetadata(request *SetUserMetadataRequest) (*SetUserMetadataResponse, error)
 	DeleteUserMetadata(request *DeleteUserMetadataRequest) (*DeleteUserMetadataResponse, error)
 	AdminResetPassword(request *AdminResetPasswordRequest) (*AdminResetPasswordResponse, error)
+	AdminMigrateBcryptUsers(request *AdminMigrateBcryptUsersRequest) (*AdminMigrateUsersResponse, error)
+	AdminMigrateSha512Users(request *AdminMigrateSha512UsersRequest) (*AdminMigrateUsersResponse, error)
 	VerifyJwt(request *VerifyJwtRequest) (*VerifyJwtResponse, error)
 }
 
