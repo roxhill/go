@@ -28,7 +28,6 @@ const (
 	UserLocked              = "locked"
 	UserInvited             = "invited"
 	UserInvitationConfirmed = "invitationConfirmed"
-	UserMigrated            = "migrated"
 )
 
 const (
@@ -94,6 +93,7 @@ type GetUserResponse struct {
 	EnabledMfaMethods      []string `json:"enabledMfaMethods"`
 	Language               string   `json:"language"`
 	PhoneNumber            string   `json:"phoneNumber"`
+	CreatedByAdmin         bool     `json:"createdByAdmin"`
 }
 
 func (c *client) GetUser(request *GetUserRequest) (*GetUserResponse, error) {
@@ -347,6 +347,7 @@ type BcryptUserMigrationRequest struct {
 	Username               string         `json:"username"`
 	EmailAddress           string         `json:"emailAddress"`
 	PhoneNumber            string         `json:"phoneNumber,omitempty"`
+	Status                 string         `json:"status"`
 	Password               BcryptPassword `json:"password"`
 	RequiresPasswordChange bool           `json:"requiresPasswordChange"`
 	AllowedAuthFlows       []string       `json:"allowedAuthFlows"`
@@ -396,6 +397,7 @@ type Sha512UserMigrationRequest struct {
 	Username               string         `json:"username"`
 	EmailAddress           string         `json:"emailAddress"`
 	PhoneNumber            string         `json:"phoneNumber,omitempty"`
+	Status                 string         `json:"status"`
 	Password               Sha512Password `json:"password"`
 	RequiresPasswordChange bool           `json:"requiresPasswordChange"`
 	AllowedAuthFlows       []string       `json:"allowedAuthFlows"`
