@@ -39,8 +39,8 @@ type SessionStartRequest struct {
 }
 
 type SessionStartResponse struct {
-	Session         ResolvedSession   `json:"session"`
-	ResponseHeaders map[string]string `json:"responseHeaders"`
+	Session         ResolvedSession `json:"session"`
+	ResponseHeaders interface{}     `json:"responseHeaders"`
 }
 
 func (c *client) SessionStart(request *SessionStartRequest) (*SessionStartResponse, error) {
@@ -72,9 +72,9 @@ type SessionResolveRequest struct {
 }
 
 type Recommended struct {
-	Action          string            `json:"action"`
-	ResponseHeaders map[string]string `json:"responseHeaders"`
-	Reason          string            `json:"reason"`
+	Action          string      `json:"action"`
+	ResponseHeaders interface{} `json:"responseHeaders"`
+	Reason          string      `json:"reason"`
 }
 
 type SessionResolveResponse struct {
