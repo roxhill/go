@@ -342,14 +342,12 @@ type AdminMigrateBcryptUsersRequest struct {
 }
 
 type BcryptUserMigrationRequest struct {
-	Username               string         `json:"username"`
-	EmailAddress           string         `json:"emailAddress"`
-	PhoneNumber            string         `json:"phoneNumber,omitempty"`
-	Status                 string         `json:"status"`
-	Password               BcryptPassword `json:"password"`
-	RequiresPasswordChange bool           `json:"requiresPasswordChange"`
-	AllowedAuthFlows       []string       `json:"allowedAuthFlows"`
-	Language               string         `json:"language"`
+	Username     string         `json:"username"`
+	EmailAddress string         `json:"emailAddress"`
+	PhoneNumber  string         `json:"phoneNumber,omitempty"`
+	Status       string         `json:"status"`
+	Password     BcryptPassword `json:"password"`
+	Language     string         `json:"language"`
 }
 
 type BcryptPassword struct {
@@ -392,14 +390,12 @@ type AdminMigrateSha512UsersRequest struct {
 }
 
 type Sha512UserMigrationRequest struct {
-	Username               string         `json:"username"`
-	EmailAddress           string         `json:"emailAddress"`
-	PhoneNumber            string         `json:"phoneNumber,omitempty"`
-	Status                 string         `json:"status"`
-	Password               Sha512Password `json:"password"`
-	RequiresPasswordChange bool           `json:"requiresPasswordChange"`
-	AllowedAuthFlows       []string       `json:"allowedAuthFlows"`
-	Language               string         `json:"language"`
+	Username     string         `json:"username"`
+	EmailAddress string         `json:"emailAddress"`
+	PhoneNumber  string         `json:"phoneNumber,omitempty"`
+	Status       string         `json:"status"`
+	Password     Sha512Password `json:"password"`
+	Language     string         `json:"language"`
 }
 
 type Sha512Password struct {
