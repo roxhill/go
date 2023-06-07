@@ -9,16 +9,18 @@ import (
 )
 
 const (
-	createUserAction         = "/users.create"
-	getUserAction            = "/users.get"
-	deleteUserAction         = "/users.delete"
-	listUsersAction          = "/users.list"
-	updateUserAction         = "/users.update"
-	setUserPasswordAction    = "/users.setPassword"
-	getUserMetadataAction    = "/users.metadata.get"
-	setUserMetadataAction    = "/users.metadata.set"
-	deleteUserMetadataAction = "/users.metadata.delete"
-	adminMigrateUsersAction  = "/users.adminMigrateUsers"
+	createUserAction            = "/users.create"
+	getUserAction               = "/users.get"
+	deleteUserAction            = "/users.delete"
+	listUsersAction             = "/users.list"
+	updateUserAction            = "/users.update"
+	setUserPasswordAction       = "/users.setPassword"
+	getUserMetadataAction       = "/users.metadata.get"
+	setUserMetadataAction       = "/users.metadata.set"
+	deleteUserMetadataAction    = "/users.metadata.delete"
+	adminMigrateUsersAction     = "/users.adminMigrateUsers"
+	adminImpersonateStartAction = "/users.adminImpersonate"
+	adminImpersonateStopAction  = "/users.adminStopImpersonatingUserHandler"
 )
 
 const (
@@ -427,6 +429,67 @@ func (c *client) AdminMigrateSha512Users(request *AdminMigrateSha512UsersRequest
 	return response, nil
 }
 
+type AdminImpersonateStartRequest struct {
+	Sid    string `json:"sid"`
+	UserId string `json:"userId"`
+}
+
+type AdminImpersonateStartResponse struct {
+	Status string `json:"status"`
+}
+
+func (c *client) AdminImpersonateStart(request *AdminImpersonateStartRequest) (*AdminImpersonateStartResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(adminImpersonateStartAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &AdminImpersonateStartResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type AdminImpersonateStopRequest struct {
+	Sid string `json:"sid"`
+}
+
+type AdminImpersonateStopResponse struct {
+	Status string `json:"status"`
+}
+
+func (c *client) AdminImpersonateStop(request *AdminImpersonateStopRequest) (*AdminImpersonateStopResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(adminImpersonateStopAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch response: %v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &AdminImpersonateStopResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
 type Client interface {
 	CreateUser(request *CreateUserRequest) (*CreateUserResponse, error)
 	GetUser(request *GetUserRequest) (*UserResponse, error)
@@ -439,6 +502,8 @@ type Client interface {
 	DeleteUserMetadata(request *DeleteUserMetadataRequest) (*DeleteUserMetadataResponse, error)
 	AdminMigrateBcryptUsers(request *AdminMigrateBcryptUsersRequest) (*AdminMigrateUsersResponse, error)
 	AdminMigrateSha512Users(request *AdminMigrateSha512UsersRequest) (*AdminMigrateUsersResponse, error)
+	AdminImpersonateStart(request *AdminImpersonateStartRequest) (*AdminImpersonateStartResponse, error)
+	AdminImpersonateStop(request *AdminImpersonateStopRequest) (*AdminImpersonateStopResponse, error)
 }
 
 type client struct {

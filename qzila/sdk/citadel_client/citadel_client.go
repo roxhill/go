@@ -14,22 +14,28 @@ const (
 	sessionRevokeAction  = "/sessions.revoke"
 )
 
+type ResolvedIdentity struct {
+	Id         string          `json:"id"`
+	AssignedAt string          `json:"assignedAt"`
+	User       string          `json:"user"`
+	Data       []ResolvedValue `json:"data"`
+}
+
 type ResolvedValue struct {
 	Name  string      `json:"name"`
-	Type  string      `json:"type"`
 	Value interface{} `json:"value"`
+	From  string      `json:"from"`
 }
 
 type ResolvedSession struct {
-	Id          string          `json:"id"`
-	Sid         string          `json:"sid"`
-	User        string          `json:"user"`
-	Audience    string          `json:"audience"`
-	IssuedAt    string          `json:"issuedAt"`
-	RefreshedAt string          `json:"refreshedAt"`
-	ExpiresAt   string          `json:"expiresAt"`
-	ResolvedAt  string          `json:"resolvedAt"`
-	Data        []ResolvedValue `json:"data"`
+	Id          string             `json:"id"`
+	Sid         string             `json:"sid"`
+	Identities  []ResolvedIdentity `json:"identities"`
+	Audience    string             `json:"audience"`
+	IssuedAt    string             `json:"issuedAt"`
+	RefreshedAt string             `json:"refreshedAt"`
+	ExpiresAt   string             `json:"expiresAt"`
+	ResolvedAt  string             `json:"resolvedAt"`
 }
 
 type SessionStartRequest struct {
