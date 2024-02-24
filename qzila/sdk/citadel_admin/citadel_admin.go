@@ -20,7 +20,7 @@ const (
 	deleteUserMetadataAction    = "/users.metadata.delete"
 	adminMigrateUsersAction     = "/users.adminMigrateUsers"
 	adminImpersonateStartAction = "/users.adminImpersonate"
-	adminImpersonateStopAction  = "/users.adminStopImpersonatingUserHandler"
+	adminImpersonateStopAction  = "/users.adminStopImpersonating"
 )
 
 const (

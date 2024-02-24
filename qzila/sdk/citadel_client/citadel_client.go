@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	sessionStartAction   = "/sessions.start"
 	sessionResolveAction = "/sessions.resolve"
 	sessionRevokeAction  = "/sessions.revoke"
 )
@@ -36,39 +35,6 @@ type ResolvedSession struct {
 	RefreshedAt string             `json:"refreshedAt"`
 	ExpiresAt   string             `json:"expiresAt"`
 	ResolvedAt  string             `json:"resolvedAt"`
-}
-
-type SessionStartRequest struct {
-	Token        string `json:"token"`
-	ClientId     string `json:"clientId"`
-	ClientSecret string `json:"clientSecret"`
-}
-
-type SessionStartResponse struct {
-	Session         ResolvedSession `json:"session"`
-	ResponseHeaders interface{}     `json:"responseHeaders"`
-}
-
-func (c *client) SessionStart(request *SessionStartRequest) (*SessionStartResponse, error) {
-	requestBody, err := json.Marshal(request)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %v", err)
-	}
-
-	responseBody, err := c.request(sessionStartAction, bytes.NewBuffer(requestBody))
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
-	}
-
-	defer responseBody.Close()
-
-	response := &SessionStartResponse{}
-	err = json.NewDecoder(responseBody).Decode(response)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
-	}
-
-	return response, nil
 }
 
 type SessionResolveRequest struct {
@@ -111,7 +77,7 @@ func (c *client) SessionResolve(request *SessionResolveRequest) (*SessionResolve
 }
 
 type SessionRevokeRequest struct {
-	Sid          string   `json:"sid"`
+	CookieHeader string   `json:"cookieHeader"`
 	ClientId     string   `json:"clientId"`
 	ClientSecret []string `json:"clientSecret"`
 }
@@ -143,7 +109,6 @@ func (c *client) SessionRevoke(request *SessionRevokeRequest) (*SessionRevokeRes
 }
 
 type Client interface {
-	SessionStart(request *SessionStartRequest) (*SessionStartResponse, error)
 	SessionResolve(request *SessionResolveRequest) (*SessionResolveResponse, error)
 	SessionRevoke(request *SessionRevokeRequest) (*SessionRevokeResponse, error)
 }
