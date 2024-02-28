@@ -43,6 +43,15 @@ const (
 	SecondFactorTotp       = "totp"
 )
 
+const (
+	LanguageEn = "en"
+)
+
+const (
+	BcryptPasswordAlgorithm = "bcrypt"
+	Sha512PasswordAlgorithm = "sha512"
+)
+
 type UserResponse struct {
 	UserId                 string   `json:"id"`
 	AllowedAuthFlows       []string `json:"allowedAuthFlows"`
@@ -344,6 +353,7 @@ type AdminMigrateBcryptUsersRequest struct {
 }
 
 type BcryptUserMigrationRequest struct {
+	UserId       string         `json:"userId"`
 	Username     string         `json:"username"`
 	EmailAddress string         `json:"emailAddress"`
 	PhoneNumber  string         `json:"phoneNumber,omitempty"`
@@ -392,6 +402,7 @@ type AdminMigrateSha512UsersRequest struct {
 }
 
 type Sha512UserMigrationRequest struct {
+	UserId       string         `json:"userId"`
 	Username     string         `json:"username"`
 	EmailAddress string         `json:"emailAddress"`
 	PhoneNumber  string         `json:"phoneNumber,omitempty"`
