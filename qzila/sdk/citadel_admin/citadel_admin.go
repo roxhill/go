@@ -363,7 +363,7 @@ type BcryptUserMigrationRequest struct {
 }
 
 type BcryptPassword struct {
-	Algorithm string `json:"algorithm"`
+	Algorithm string `json:"alg"`
 	Hash      string `json:"hash"`
 }
 
@@ -412,7 +412,7 @@ type Sha512UserMigrationRequest struct {
 }
 
 type Sha512Password struct {
-	Algorithm  string `json:"algorithm"`
+	Algorithm  string `json:"alg"`
 	Hash       string `json:"hash"`
 	Salt       string `json:"salt"`
 	Iterations int    `json:"iterations"`
