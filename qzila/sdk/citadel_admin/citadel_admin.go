@@ -88,7 +88,7 @@ func (c *client) CreateUser(request *CreateUserRequest) (*CreateUserResponse, er
 
 	responseBody, err := c.request(createUserAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -144,7 +144,7 @@ func (c *client) DeleteUser(request *DeleteUserRequest) (*DeleteUserResponse, er
 
 	responseBody, err := c.request(deleteUserAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -176,7 +176,7 @@ func (c *client) ListUsers(request *ListUsersRequest) (*ListUsersResponse, error
 
 	responseBody, err := c.request(listUsersAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -206,7 +206,7 @@ func (c *client) UpdateUser(request *UpdateUserRequest) (*UserResponse, error) {
 
 	responseBody, err := c.request(updateUserAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -237,7 +237,7 @@ func (c *client) SetUserPassword(request *SetUserPasswordRequest) (*SetUserPassw
 
 	responseBody, err := c.request(setUserPasswordAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -272,7 +272,7 @@ func (c *client) GetAllUserMetadata(request *GetAllUserMetadataRequest) (*GetAll
 
 	responseBody, err := c.request(getUserMetadataAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -303,7 +303,7 @@ func (c *client) SetUserMetadata(request *SetUserMetadataRequest) (*SetUserMetad
 
 	responseBody, err := c.request(setUserMetadataAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -334,7 +334,7 @@ func (c *client) DeleteUserMetadata(request *DeleteUserMetadataRequest) (*Delete
 
 	responseBody, err := c.request(deleteUserMetadataAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -383,7 +383,7 @@ func (c *client) AdminMigrateBcryptUsers(request *AdminMigrateBcryptUsersRequest
 
 	responseBody, err := c.request(adminMigrateUsersAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -426,7 +426,7 @@ func (c *client) AdminMigrateSha512Users(request *AdminMigrateSha512UsersRequest
 
 	responseBody, err := c.request(adminMigrateUsersAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -457,7 +457,7 @@ func (c *client) AdminImpersonateStart(request *AdminImpersonateStartRequest) (*
 
 	responseBody, err := c.request(adminImpersonateStartAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -487,7 +487,7 @@ func (c *client) AdminImpersonateStop(request *AdminImpersonateStopRequest) (*Ad
 
 	responseBody, err := c.request(adminImpersonateStopAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -539,6 +539,11 @@ func NewClient(config *ClientConfig) Client {
 	}
 }
 
+type ErrorResponse struct {
+	Id      string `json:"errorId"`
+	Message string `json:"error"`
+}
+
 func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 	req, err := http.NewRequest("POST", c.baseUrl+action, body)
 	if err != nil {
@@ -550,6 +555,16 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send POST request: %v", err)
+	}
+
+	if resp.StatusCode == http.StatusBadRequest {
+		errorResponse := &ErrorResponse{}
+		err = json.NewDecoder(resp.Body).Decode(errorResponse)
+		if err == nil {
+			return nil, fmt.Errorf("API error (%v): %v", errorResponse.Id, errorResponse.Message)
+		}
+
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
 	}
 
 	return resp.Body, nil

@@ -62,7 +62,7 @@ func (c *client) SessionResolve(request *SessionResolveRequest) (*SessionResolve
 
 	responseBody, err := c.request(sessionResolveAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -94,7 +94,7 @@ func (c *client) SessionRevoke(request *SessionRevokeRequest) (*SessionRevokeRes
 
 	responseBody, err := c.request(sessionRevokeAction, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch response: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	defer responseBody.Close()
@@ -132,6 +132,11 @@ func NewClient(config *ClientConfig) Client {
 	}
 }
 
+type ErrorResponse struct {
+	Id      string `json:"errorId"`
+	Message string `json:"error"`
+}
+
 func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 	req, err := http.NewRequest("POST", c.baseUrl+action, body)
 	if err != nil {
@@ -142,6 +147,16 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send POST request: %v", err)
+	}
+
+	if resp.StatusCode == http.StatusBadRequest {
+		errorResponse := &ErrorResponse{}
+		err = json.NewDecoder(resp.Body).Decode(errorResponse)
+		if err == nil {
+			return nil, fmt.Errorf("API error (%v): %v", errorResponse.Id, errorResponse.Message)
+		}
+
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
 	}
 
 	return resp.Body, nil
