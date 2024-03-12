@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	sessionResolveAction = "/sessions.resolve"
-	sessionRevokeAction  = "/sessions.revoke"
+	sessionResolveAction       = "/sessions.resolve"
+	sessionRevokeAction        = "/sessions.revoke"
+	sessionResolveBearerAction = "/sessions.resolveBearer"
 )
 
 type ResolvedIdentity struct {
@@ -100,6 +101,36 @@ func (c *client) SessionRevoke(request *SessionRevokeRequest) (*SessionRevokeRes
 	defer responseBody.Close()
 
 	response := &SessionRevokeResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type SessionResolveBearerRequest struct {
+	Token string `json:"token"`
+}
+
+type SessionResolveBearerResponse struct {
+	Session ResolvedSession `json:"session,omitempty"`
+}
+
+func (c *client) SessionResolveBearer(request *SessionResolveBearerRequest) (*SessionResolveBearerResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(sessionResolveBearerAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &SessionResolveBearerResponse{}
 	err = json.NewDecoder(responseBody).Decode(response)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
