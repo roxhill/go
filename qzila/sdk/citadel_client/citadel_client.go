@@ -11,7 +11,8 @@ import (
 const (
 	sessionResolveAction       = "/sessions.resolve"
 	sessionRevokeAction        = "/sessions.revoke"
-	sessionResolveBearerAction = "/sessions.resolveBearer"
+	sessionResolveBearerAction = "/sessions.bearerResolve"
+	sessionRevokeBearerAction  = "/sessions.bearerRevoke"
 )
 
 type ResolvedIdentity struct {
@@ -139,9 +140,41 @@ func (c *client) SessionResolveBearer(request *SessionResolveBearerRequest) (*Se
 	return response, nil
 }
 
+type SessionRevokeBearerRequest struct {
+	Token string `json:"token"`
+}
+
+type SessionRevokeBearerResponse struct {
+	Status string `json:"status"`
+}
+
+func (c *client) SessionRevokeBearer(request *SessionRevokeBearerRequest) (*SessionRevokeBearerResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(sessionRevokeBearerAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &SessionRevokeBearerResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
 type Client interface {
 	SessionResolve(request *SessionResolveRequest) (*SessionResolveResponse, error)
 	SessionRevoke(request *SessionRevokeRequest) (*SessionRevokeResponse, error)
+	SessionResolveBearer(request *SessionResolveBearerRequest) (*SessionResolveBearerResponse, error)
+	SessionRevokeBearer(request *SessionRevokeBearerRequest) (*SessionRevokeBearerResponse, error)
 }
 
 type client struct {
