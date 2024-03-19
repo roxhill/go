@@ -134,6 +134,8 @@ func (c *client) SessionResolveBearer(request *SessionResolveBearerRequest) (*Se
 	response := &SessionResolveBearerResponse{}
 	err = json.NewDecoder(responseBody).Decode(response)
 	if err != nil {
+		fmt.Println(requestBody)
+
 		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
 	}
 
@@ -223,6 +225,8 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 
 		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
 	}
+
+	fmt.Println(json.NewDecoder(resp.Body))
 
 	return resp.Body, nil
 }
