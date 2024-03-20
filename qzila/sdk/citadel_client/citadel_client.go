@@ -20,6 +20,7 @@ type ResolvedIdentity struct {
 	AssignedAt string          `json:"assignedAt"`
 	User       string          `json:"user"`
 	Data       []ResolvedValue `json:"data"`
+	Status     string          `json:"status"`
 }
 
 type ResolvedValue struct {
