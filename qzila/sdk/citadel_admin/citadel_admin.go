@@ -558,7 +558,7 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("failed to send POST request: %v", err)
 	}
 
-	if resp.StatusCode == http.StatusBadRequest {
+	if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnauthorized {
 		errorResponse := &ErrorResponse{}
 		err = json.NewDecoder(resp.Body).Decode(errorResponse)
 		if err == nil {
