@@ -544,6 +544,15 @@ type ErrorResponse struct {
 	Message string `json:"error"`
 }
 
+type CitadelError struct {
+	StatusCode int
+	Message    string
+}
+
+func (e *CitadelError) Error() string {
+	return fmt.Sprintf("HTTP %d - API error: %v", e.StatusCode, e.Message)
+}
+
 func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 	req, err := http.NewRequest("POST", c.baseUrl+action, body)
 	if err != nil {
@@ -562,7 +571,11 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 		errorResponse := &ErrorResponse{}
 		err = json.NewDecoder(resp.Body).Decode(errorResponse)
 		if err == nil {
-			return nil, fmt.Errorf("API error (%v): %v", errorResponse.Id, errorResponse.Message)
+			error := &CitadelError{
+				StatusCode: resp.StatusCode,
+				Message:    fmt.Sprintf("(%v) %v", errorResponse.Id, errorResponse.Message),
+			}
+			return nil, error
 		}
 
 		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
@@ -571,7 +584,12 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 	if resp.StatusCode == http.StatusInternalServerError {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err == nil {
-			return nil, fmt.Errorf("API error: %v", string(bodyBytes))
+			error := &CitadelError{
+				StatusCode: resp.StatusCode,
+				Message:    string(bodyBytes),
+			}
+
+			return nil, error
 		}
 
 		return nil, fmt.Errorf("failed to parse body: %v", err)
