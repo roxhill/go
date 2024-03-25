@@ -232,7 +232,6 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 		}
 
 		return nil, fmt.Errorf("failed to parse body: %v", err)
-
 	}
 
 	return resp.Body, nil

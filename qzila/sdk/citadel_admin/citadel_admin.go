@@ -568,5 +568,14 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
 	}
 
+	if resp.StatusCode == http.StatusInternalServerError {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err == nil {
+			return nil, fmt.Errorf("API error: %v", string(bodyBytes))
+		}
+
+		return nil, fmt.Errorf("failed to parse body: %v", err)
+	}
+
 	return resp.Body, nil
 }
