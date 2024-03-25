@@ -214,14 +214,14 @@ func (e *CitadelError) Error() string {
 func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 	req, err := http.NewRequest("POST", c.baseUrl+action, body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create POST request: %v", err)
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-sdk-version", "0.8.0-go")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send POST request: %v", err)
+		return nil, err
 	}
 
 	if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnauthorized {
@@ -235,7 +235,7 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 			return nil, error
 		}
 
-		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+		return nil, err
 	}
 
 	if resp.StatusCode == http.StatusInternalServerError {
@@ -249,7 +249,7 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 			return nil, error
 		}
 
-		return nil, fmt.Errorf("failed to parse body: %v", err)
+		return nil, err
 	}
 
 	return resp.Body, nil
