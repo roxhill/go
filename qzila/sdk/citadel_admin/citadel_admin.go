@@ -24,23 +24,14 @@ const (
 )
 
 const (
-	UserActive              = "active"
-	UserDisabled            = "disabled"
-	UserLocked              = "locked"
-	UserInvited             = "invited"
-	UserInvitationConfirmed = "invitationConfirmed"
+	UserActive   = "active"
+	UserDisabled = "disabled"
+	UserLocked   = "locked"
 )
 
 const (
-	AuthFlowEmailCode = "emailCode"
-	AuthFlowPassword  = "password"
-)
-
-const (
-	SecondFactorEmail      = "email"
-	SecondFactorSms        = "sms"
-	SecondFactorPrivateKey = "privateKey"
-	SecondFactorTotp       = "totp"
+	SecondFactorEmail = "emailCode"
+	SecondFactorSms   = "smsCode"
 )
 
 const (
@@ -53,18 +44,14 @@ const (
 )
 
 type UserResponse struct {
-	UserId                 string   `json:"id"`
-	AllowedAuthFlows       []string `json:"allowedAuthFlows"`
-	RequiresPasswordChange bool     `json:"requiresPasswordChange"`
-	Status                 string   `json:"status"`
-	Username               string   `json:"username"`
-	FailedPasswordAttempts int      `json:"failedPasswordAttempts"`
-	Mfa                    bool     `json:"mfa"`
-	EmailAddress           string   `json:"emailAddress"`
-	EnabledMfaMethods      []string `json:"enabledMfaMethods"`
-	Language               string   `json:"language"`
-	PhoneNumber            string   `json:"phoneNumber"`
-	CreatedByAdmin         bool     `json:"createdByAdmin"`
+	UserId            string   `json:"id"`
+	Status            string   `json:"status"`
+	Username          string   `json:"username"`
+	EmailAddress      string   `json:"emailAddress"`
+	DisableMfa        bool     `json:"disableMfa"`
+	AllowedMfaMethods []string `json:"allowedMfaMethods"`
+	Language          string   `json:"language"`
+	PhoneNumber       string   `json:"phoneNumber"`
 }
 
 type CreateUserRequest struct {
@@ -191,11 +178,13 @@ func (c *client) ListUsers(request *ListUsersRequest) (*ListUsersResponse, error
 }
 
 type UpdateUserRequest struct {
-	UserId       string `json:"userId"`
-	Username     string `json:"username,omitempty"`
-	EmailAddress string `json:"emailAddress,omitempty"`
-	PhoneNumber  string `json:"phoneNumber,omitempty"`
-	Status       string `json:"status,omitempty"`
+	UserId            string   `json:"userId"`
+	Username          string   `json:"username,omitempty"`
+	EmailAddress      string   `json:"emailAddress,omitempty"`
+	PhoneNumber       string   `json:"phoneNumber,omitempty"`
+	Status            string   `json:"status,omitempty"`
+	DisableMfa        string   `json:"disableMfa,omitempty"`
+	AllowedMfaMethods []string `json:"allowedMfaMethods,omitempty"`
 }
 
 func (c *client) UpdateUser(request *UpdateUserRequest) (*UserResponse, error) {
@@ -360,6 +349,7 @@ type BcryptUserMigrationRequest struct {
 	Status       string         `json:"status"`
 	Password     BcryptPassword `json:"password"`
 	Language     string         `json:"language"`
+	DisableMfa   bool           `json:"disableMfa"`
 }
 
 type BcryptPassword struct {
@@ -409,6 +399,7 @@ type Sha512UserMigrationRequest struct {
 	Status       string         `json:"status"`
 	Password     Sha512Password `json:"password"`
 	Language     string         `json:"language"`
+	DisableMfa   bool           `json:"disableMfa"`
 }
 
 type Sha512Password struct {
@@ -560,7 +551,7 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", c.apiKey)
-	req.Header.Set("x-sdk-version", "0.8.0-go")
+	req.Header.Set("x-sdk-version", "0.9.0-go")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
