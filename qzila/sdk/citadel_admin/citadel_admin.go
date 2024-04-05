@@ -183,7 +183,7 @@ type UpdateUserRequest struct {
 	EmailAddress      string   `json:"emailAddress,omitempty"`
 	PhoneNumber       string   `json:"phoneNumber,omitempty"`
 	Status            string   `json:"status,omitempty"`
-	DisableMfa        string   `json:"disableMfa,omitempty"`
+	DisableMfa        bool     `json:"disableMfa,omitempty"`
 	AllowedMfaMethods []string `json:"allowedMfaMethods,omitempty"`
 }
 
