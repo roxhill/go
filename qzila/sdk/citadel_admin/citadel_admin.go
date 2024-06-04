@@ -15,6 +15,7 @@ const (
 	listUsersAction             = "/users.list"
 	updateUserAction            = "/users.update"
 	setUserPasswordAction       = "/users.setPassword"
+	changeUserPasswordAction    = "/users.changePassword"
 	getUserMetadataAction       = "/users.metadata.get"
 	setUserMetadataAction       = "/users.metadata.set"
 	deleteUserMetadataAction    = "/users.metadata.delete"
@@ -232,6 +233,38 @@ func (c *client) SetUserPassword(request *SetUserPasswordRequest) (*SetUserPassw
 	defer responseBody.Close()
 
 	response := &SetUserPasswordResponse{}
+	err = json.NewDecoder(responseBody).Decode(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	return response, nil
+}
+
+type ChangeUserPasswordRequest struct {
+	UserId      string `json:"userId"`
+	OldPassword string `json:"oldPassword"`
+	NewPassword string `json:"newPassword"`
+}
+
+type ChangeUserPasswordResponse struct {
+	Status string `json:"status"`
+}
+
+func (c *client) ChangeUserPassword(request *ChangeUserPasswordRequest) (*ChangeUserPasswordResponse, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	responseBody, err := c.request(changeUserPasswordAction, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+
+	defer responseBody.Close()
+
+	response := &ChangeUserPasswordResponse{}
 	err = json.NewDecoder(responseBody).Decode(response)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
@@ -499,6 +532,7 @@ type Client interface {
 	ListUsers(request *ListUsersRequest) (*ListUsersResponse, error)
 	UpdateUser(request *UpdateUserRequest) (*UserResponse, error)
 	SetUserPassword(request *SetUserPasswordRequest) (*SetUserPasswordResponse, error)
+	ChangeUserPassword(request *ChangeUserPasswordRequest) (*ChangeUserPasswordResponse, error)
 	GetAllUserMetadata(request *GetAllUserMetadataRequest) (*GetAllUserMetadataResponse, error)
 	SetUserMetadata(request *SetUserMetadataRequest) (*SetUserMetadataResponse, error)
 	DeleteUserMetadata(request *DeleteUserMetadataRequest) (*DeleteUserMetadataResponse, error)
