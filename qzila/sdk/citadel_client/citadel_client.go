@@ -197,18 +197,14 @@ func NewClient(config *ClientConfig) Client {
 	}
 }
 
-type ErrorResponse struct {
-	Id      string `json:"errorId,omitempty"`
-	Message string `json:"error"`
-}
-
 type CitadelError struct {
-	StatusCode int
-	Message    string
+	Type    string `json:"type"`
+	Message string `json:"message"`
 }
 
-func (e *CitadelError) Error() string {
-	return fmt.Sprintf("HTTP %d - API error: %v", e.StatusCode, e.Message)
+type ErrorResponse struct {
+	Id      string       `json:"errorId,omitempty"`
+	Message CitadelError `json:"error"`
 }
 
 func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
@@ -217,40 +213,165 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-sdk-version", "0.9.0-go")
+	req.Header.Set("x-sdk-version", "0.10.0-go")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnauthorized {
-		errorResponse := &ErrorResponse{}
-		err = json.NewDecoder(resp.Body).Decode(errorResponse)
+	if resp.StatusCode == http.StatusInternalServerError {
+		bodyBytes, err := io.ReadAll(resp.Body)
 		if err == nil {
-			error := &CitadelError{
-				StatusCode: resp.StatusCode,
-				Message:    fmt.Sprintf("(%v) %v", errorResponse.Id, errorResponse.Message),
+			error := &UnexpectedError{
+				Message: fmt.Sprintf("HTTP %d - API error: %v", 500, string(bodyBytes)),
 			}
+
 			return nil, error
 		}
 
 		return nil, err
 	}
 
-	if resp.StatusCode == http.StatusInternalServerError {
-		bodyBytes, err := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		errorResponse := &ErrorResponse{}
+		err = json.NewDecoder(resp.Body).Decode(errorResponse)
 		if err == nil {
-			error := &CitadelError{
-				StatusCode: resp.StatusCode,
-				Message:    string(bodyBytes),
+			if errorResponse.Message.Type == "configError" {
+				return nil, &ConfigError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "bearerMalformed" {
+				return nil, &BearerMalformedError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "userDeleteFailed" {
+				return nil, &UserDeleteFailedError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "passwordInvalid" {
+				return nil, &PasswordInvalidError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "userAlreadyImpersonated" {
+				return nil, &UserAlreadyImpersonatedError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "userNotImpersonated" {
+				return nil, &UserNotImpersonatedError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "notFound" {
+				return nil, &NotFoundError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "usernameAlreadyTaken" {
+				return nil, &UsernameAlreadyTakenError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "userAlreadyExists" {
+				return nil, &UserAlreadyExistsError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "bearerExpired" {
+				return nil, &BearerExpiredError{Message: errorResponse.Message.Message}
+			}
+			if errorResponse.Message.Type == "sessionInvalid" {
+				return nil, &SessionInvalidError{Message: errorResponse.Message.Message}
 			}
 
-			return nil, error
+			return nil, &UnexpectedError{Message: fmt.Sprintf("Unexpected error.\nType: %v\nMessage: %v", errorResponse.Message.Type, errorResponse.Message.Message)}
 		}
 
 		return nil, err
 	}
 
 	return resp.Body, nil
+}
+
+type UnexpectedError struct {
+	Message string
+}
+
+func (e *UnexpectedError) Error() string {
+	return e.Message
+}
+
+type ConfigError struct {
+	Message string
+}
+
+func (e *ConfigError) Error() string {
+	return e.Message
+}
+
+type BearerMalformedError struct {
+	Message string
+}
+
+func (e *BearerMalformedError) Error() string {
+	return e.Message
+}
+
+type UserDeleteFailedError struct {
+	Message string
+}
+
+func (e *UserDeleteFailedError) Error() string {
+	return e.Message
+}
+
+type PasswordInvalidError struct {
+	Message string
+}
+
+func (e *PasswordInvalidError) Error() string {
+	return e.Message
+}
+
+type UserAlreadyImpersonatedError struct {
+	Message string
+}
+
+func (e *UserAlreadyImpersonatedError) Error() string {
+	return e.Message
+}
+
+type UserNotImpersonatedError struct {
+	Message string
+}
+
+func (e *UserNotImpersonatedError) Error() string {
+	return e.Message
+}
+
+type NotFoundError struct {
+	Message string
+}
+
+func (e *NotFoundError) Error() string {
+	return e.Message
+}
+
+type UsernameAlreadyTakenError struct {
+	Message string
+}
+
+func (e *UsernameAlreadyTakenError) Error() string {
+	return e.Message
+}
+
+type UserAlreadyExistsError struct {
+	Message string
+}
+
+func (e *UserAlreadyExistsError) Error() string {
+	return e.Message
+}
+
+type BearerExpiredError struct {
+	Message string
+}
+
+func (e *BearerExpiredError) Error() string {
+	return e.Message
+}
+
+type SessionInvalidError struct {
+	Message string
+}
+
+func (e *SessionInvalidError) Error() string {
+	return e.Message
 }
