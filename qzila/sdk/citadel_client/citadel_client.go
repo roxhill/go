@@ -213,21 +213,27 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-sdk-version", "0.10.0-go")
+	req.Header.Set("x-sdk-version", "0.10.1-go")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode == http.StatusInternalServerError {
+	// Handle Api Gateway errors
+	if resp.StatusCode == http.StatusInternalServerError ||
+		resp.StatusCode == http.StatusServiceUnavailable ||
+		resp.StatusCode == http.StatusGatewayTimeout ||
+		resp.StatusCode == http.StatusBadGateway ||
+		resp.StatusCode == http.StatusUnauthorized ||
+		resp.StatusCode == http.StatusForbidden {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err == nil {
-			error := &UnexpectedError{
-				Message: fmt.Sprintf("HTTP %d - API error: %v", 500, string(bodyBytes)),
+			err := &UnexpectedError{
+				Message: fmt.Sprintf("HTTP %d - API error: %v", resp.StatusCode, string(bodyBytes)),
 			}
 
-			return nil, error
+			return nil, err
 		}
 
 		return nil, err
@@ -235,46 +241,40 @@ func (c *client) request(action string, body io.Reader) (io.ReadCloser, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		errorResponse := &ErrorResponse{}
-		err = json.NewDecoder(resp.Body).Decode(errorResponse)
-		if err == nil {
-			if errorResponse.Message.Type == "configError" {
-				return nil, &ConfigError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "bearerMalformed" {
-				return nil, &BearerMalformedError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "userDeleteFailed" {
-				return nil, &UserDeleteFailedError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "passwordInvalid" {
-				return nil, &PasswordInvalidError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "userAlreadyImpersonated" {
-				return nil, &UserAlreadyImpersonatedError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "userNotImpersonated" {
-				return nil, &UserNotImpersonatedError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "notFound" {
-				return nil, &NotFoundError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "usernameAlreadyTaken" {
-				return nil, &UsernameAlreadyTakenError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "userAlreadyExists" {
-				return nil, &UserAlreadyExistsError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "bearerExpired" {
-				return nil, &BearerExpiredError{Message: errorResponse.Message.Message}
-			}
-			if errorResponse.Message.Type == "sessionInvalid" {
-				return nil, &SessionInvalidError{Message: errorResponse.Message.Message}
-			}
 
-			return nil, &UnexpectedError{Message: fmt.Sprintf("Unexpected error.\nType: %v\nMessage: %v", errorResponse.Message.Type, errorResponse.Message.Message)}
+		// Decode the error response
+		err = json.NewDecoder(resp.Body).Decode(errorResponse)
+		if err != nil {
+			return nil, err
 		}
 
-		return nil, err
+		// Check the error type and return the appropriate error
+		switch errorResponse.Message.Type {
+		case "configError":
+			return nil, &ConfigError{Message: errorResponse.Message.Message}
+		case "bearerMalformed":
+			return nil, &BearerMalformedError{Message: errorResponse.Message.Message}
+		case "userDeleteFailed":
+			return nil, &UserDeleteFailedError{Message: errorResponse.Message.Message}
+		case "passwordInvalid":
+			return nil, &PasswordInvalidError{Message: errorResponse.Message.Message}
+		case "userAlreadyImpersonated":
+			return nil, &UserAlreadyImpersonatedError{Message: errorResponse.Message.Message}
+		case "userNotImpersonated":
+			return nil, &UserNotImpersonatedError{Message: errorResponse.Message.Message}
+		case "notFound":
+			return nil, &NotFoundError{Message: errorResponse.Message.Message}
+		case "usernameAlreadyTaken":
+			return nil, &UsernameAlreadyTakenError{Message: errorResponse.Message.Message}
+		case "userAlreadyExists":
+			return nil, &UserAlreadyExistsError{Message: errorResponse.Message.Message}
+		case "bearerExpired":
+			return nil, &BearerExpiredError{Message: errorResponse.Message.Message}
+		case "sessionInvalid":
+			return nil, &SessionInvalidError{Message: errorResponse.Message.Message}
+		default:
+			return nil, &UnexpectedError{Message: fmt.Sprintf("Unexpected error.\nType: %v\nMessage: %v", errorResponse.Message.Type, errorResponse.Message.Message)}
+		}
 	}
 
 	return resp.Body, nil
